@@ -1,2 +1,2 @@
 # mom-recommends
-Mom's clothing recommendations by wheater
+Mom's clothing recommendations by weather
