@@ -1,0 +1,5 @@
+accuweather:
+  forecastApiHost : "dataservice.accuweather.com"
+  cityId : "55782"
+  apiKey : ""
+  queryOptions : "&details=true&metric=true"
