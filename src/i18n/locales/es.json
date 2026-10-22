@@ -1,12 +1,176 @@
 {
   "app": {
     "name": "Mom Recommends",
-    "tagline": "Mira qué ponerte hoy — con imágenes, no números."
+    "tagline": "Mira qué ponerte hoy — con imágenes, no con números.",
+    "attribution": "Datos meteorológicos de Open-Meteo.com"
   },
   "nav": {
     "home": "Inicio",
     "search": "Buscar",
     "settings": "Ajustes",
     "about": "Acerca de"
+  },
+  "activities": {
+    "school": "Colegio",
+    "playground": "Parque",
+    "walk": "Paseo",
+    "sport": "Deporte",
+    "commute": "Trayecto",
+    "general": "General"
+  },
+  "persons": {
+    "adult": "Adulto",
+    "child": "Niño/a"
+  },
+  "home": {
+    "title": "El conjunto de hoy",
+    "loading": "Consultando el tiempo…",
+    "for": "Conjunto para {{activity}}",
+    "retry": "Reintentar",
+    "useMyLocation": "Usar mi ubicación",
+    "searchInstead": "Buscar una ciudad",
+    "confidence": "Confianza",
+    "warnings": "Notas",
+    "items": "Qué incluye"
+  },
+  "search": {
+    "title": "Encuentra tu lugar",
+    "placeholder": "Ciudad, barrio o código postal",
+    "button": "Buscar",
+    "useCurrentLocation": "Usar mi ubicación actual",
+    "noResults": "No se encontraron lugares. Prueba con otro nombre.",
+    "failed": "La búsqueda falló. Inténtalo de nuevo en un momento.",
+    "results": "Elige un lugar",
+    "privacyNote": "Tu lugar nunca sale de tu dispositivo — solo se lo pedimos al servicio del tiempo."
+  },
+  "settings": {
+    "title": "Ajustes",
+    "activity": "Actividad por defecto",
+    "person": "Para quién",
+    "language": "Idioma",
+    "provider": "Proveedor del tiempo",
+    "saved": "Los cambios se guardan automáticamente en este dispositivo."
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español"
+  },
+  "about": {
+    "title": "Acerca de Mom Recommends",
+    "privacyTitle": "Privacidad ante todo",
+    "privacyText": "Sin cuenta, sin seguimiento, sin servidor. Tu ubicación, tus preferencias y el tiempo quedan en este navegador.",
+    "dataTitle": "¿De dónde salen los datos?",
+    "dataText": "Tiempo y calidad del aire de Open-Meteo.com. Nombres de lugares de OpenStreetMap (Nominatim).",
+    "contactTitle": "¿Preguntas sobre privacidad?",
+    "contactText": "Durante el desarrollo respondemos a través de los Issues de GitHub del proyecto.",
+    "credits": "Hecho para madres y padres que prefieren ver la respuesta a leer un número."
+  },
+  "errors": {
+    "location_unavailable": "No pudimos obtener tu ubicación. Busca una ciudad.",
+    "weather_fetch": "No pudimos consultar el tiempo ahora mismo. Inténtalo de nuevo en un momento.",
+    "generic": "Algo salió mal."
+  },
+  "conditions": {
+    "freezing": "helada",
+    "cold": "frío",
+    "cool": "fresco",
+    "mildly_cool": "un poco fresco",
+    "mild": "suave",
+    "warm": "cálido",
+    "hot": "caluroso",
+    "very_hot": "muy caluroso"
+  },
+  "weather": {
+    "snowing": "nevando",
+    "raining": "lloviendo",
+    "sleeting": "con aguanieve",
+    "hailing": "granizando",
+    "foggy": "con niebla",
+    "windy": "ventoso",
+    "sunny": "soleado",
+    "partly_cloudy": "parcialmente nublado",
+    "cloudy": "nublado"
+  },
+  "uv": {
+    "high": "alto",
+    "very_high": "muy alto",
+    "extreme": "extremo"
+  },
+  "activity": {
+    "school": "el colegio",
+    "playground": "el parque",
+    "walk": "un paseo",
+    "sport": "el deporte",
+    "commute": "tu trayecto",
+    "general": "el día"
+  },
+  "rationale": {
+    "first": "Hace {{condition}} y está {{weather}}, así que {{recommendation}}.",
+    "first_uv": "Hace {{condition}} y está {{weather}} con UV {{uv}}, así que {{recommendation}}.",
+    "rec": {
+      "full_winter": "recomendamos un conjunto completo de invierno para {{activity}}",
+      "warm_layers": "recomendamos capas de abrigo para {{activity}}",
+      "layered": "recomendamos ropa en capas para {{activity}}",
+      "light_extra_layer": "recomendamos una capa ligera adicional para {{activity}}",
+      "light_layers": "recomendamos capas ligeras para {{activity}}",
+      "summer_outfit": "recomendamos un conjunto ligero de verano para {{activity}}",
+      "light_breathable": "usa ropa ligera y transpirable para {{activity}}",
+      "minimal": "usa ropa mínima y transpirable para {{activity}}",
+      "raincoat_layers": "ponte un impermeable sobre las capas con botas de agua para {{activity}}",
+      "warm_waterproof": "recomendamos un conjunto cálido e impermeable para {{activity}}"
+    },
+    "suffix": {
+      "frozen": "Capas de abrigo para mantenerse seco y protegido.",
+      "very_hot": "Mantente fresco e hidratado.",
+      "sun": "Un sombrero y gafas de sol ayudarán con la protección solar."
+    }
+  },
+  "warnings": {
+    "uv_extreme": "UV extremo — minimiza la exposición al aire libre, usa protección solar SPF 50+",
+    "uv_very_high": "UV muy alto — aplica protector solar, sombrero de ala ancha y gafas de sol",
+    "uv_high": "UV alto — aplica protector solar y ponte un sombrero",
+    "uv_moderate": "UV moderado — se recomienda protector solar",
+    "extreme_cold": "Frío extremo — limita el tiempo al aire libre",
+    "heat": "Alerta de calor — mantente hidratado",
+    "poor_air": "Mala calidad del aire — considera actividades en interiores",
+    "heavy_snow": "Nieve intensa — se recomiendan botas"
+  },
+  "items": {
+    "thermal_underwear": "Ropa interior térmica",
+    "thermal_leggings": "Leggings térmicos",
+    "glove_liners": "Guantes interiores",
+    "knit_hat": "Gorro de lana",
+    "face_covering": "Cubrebocas",
+    "thermal_shirt": "Camiseta térmica",
+    "fleece": "Forro polar",
+    "heavy_winter_coat": "Abrigo grueso de invierno",
+    "snow_pants": "Pantalón de nieve",
+    "insulated_winter_boots": "Botas aislantes de invierno",
+    "insulated_mittens": "Manoplas aislantes",
+    "waterproof_mittens": "Manoplas impermeables",
+    "long_sleeve_shirt": "Camiseta de manga larga",
+    "sweater": "Jersey",
+    "insulated_jacket": "Chaqueta aislante",
+    "insulated_pants": "Pantalones aislantes",
+    "insulated_boots": "Botas aislantes",
+    "scarf": "Bufanda",
+    "gloves": "Guantes",
+    "light_jacket": "Chaqueta ligera",
+    "long_pants": "Pantalones largos",
+    "closed_shoes": "Zapatos cerrados",
+    "hat": "Gorra",
+    "light_gloves": "Guantes ligeros",
+    "tshirt": "Camiseta",
+    "hood": "Capucha",
+    "shorts": "Pantalones cortos",
+    "sandals": "Sandalias",
+    "light_cardigan": "Cárdigan ligero",
+    "sun_hat": "Sombrero de sol",
+    "wide_brim_hat": "Sombrero de ala ancha",
+    "sunglasses": "Gafas de sol",
+    "sneakers": "Zapatillas",
+    "raincoat": "Impermeable",
+    "waterproof_boots": "Botas impermeables",
+    "windbreaker": "Cortavientos"
   }
 }
