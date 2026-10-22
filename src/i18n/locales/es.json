@@ -1,0 +1,12 @@
+{
+  "app": {
+    "name": "Mom Recommends",
+    "tagline": "Mira qué ponerte hoy — con imágenes, no números."
+  },
+  "nav": {
+    "home": "Inicio",
+    "search": "Buscar",
+    "settings": "Ajustes",
+    "about": "Acerca de"
+  }
+}

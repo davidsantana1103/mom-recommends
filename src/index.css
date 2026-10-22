@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+@import './theme/tokens.css';
+
+@theme inline {
+  --color-brand-50: var(--token-brand-50);
+  --color-brand-100: var(--token-brand-100);
+  --color-brand-200: var(--token-brand-200);
+  --color-brand-300: var(--token-brand-300);
+  --color-brand-400: var(--token-brand-400);
+  --color-brand-500: var(--token-brand-500);
+  --color-brand-600: var(--token-brand-600);
+  --color-brand-700: var(--token-brand-700);
+  --color-brand-800: var(--token-brand-800);
+  --color-brand-900: var(--token-brand-900);
+
+  --color-surface: var(--token-surface);
+  --color-surface-alt: var(--token-surface-alt);
+  --color-ink: var(--token-text);
+  --color-ink-muted: var(--token-text-muted);
+  --color-line: var(--token-border);
+  --color-success: var(--token-success);
+  --color-warning: var(--token-warning);
+  --color-danger: var(--token-danger);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-surface text-ink antialiased;
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      sans-serif;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--token-focus-ring);
+    outline-offset: 2px;
+  }
+}
