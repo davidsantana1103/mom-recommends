@@ -80,12 +80,14 @@ export interface WeatherData {
 }
 
 export interface WeatherProvider {
+  /** stable identifier stored in WeatherData.provider and used by the registry */
+  readonly id: string
   /** human-readable name for UI selection */
   readonly name: string
   /** optional attribution text for the UI footer */
   readonly attribution?: string
-  /** fetch current + today's forecast for a coordinate */
-  fetch(lat: number, lon: number): Promise<WeatherData>
+  /** fetch current + today's forecast for a coordinate; name is the human-readable label */
+  fetch(lat: number, lon: number, name?: string): Promise<WeatherData>
 }
 
 /** A raw saved cache entry with a TTL timestamp (D23: sessionStorage, 5 min). */
