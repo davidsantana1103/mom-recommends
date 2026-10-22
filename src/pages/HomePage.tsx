@@ -49,12 +49,16 @@ export default function HomePage() {
       </div>
 
       {isInitial || weatherStatus === 'loading' ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line py-16 text-ink-muted">
-          <Loader2 aria-hidden className="size-6 animate-spin" />
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line py-16 text-ink-muted"
+        >
+          <Loader2 aria-hidden className="size-6 animate-spin motion-reduce:animate-none" />
           <p>{t('home.loading')}</p>
         </div>
       ) : weatherStatus === 'error' || !outfit ? (
-        <div className="rounded-2xl border border-dashed border-line p-8 text-center">
+        <div role="alert" className="rounded-2xl border border-dashed border-line p-8 text-center">
           <p className="text-ink">{weatherError ? t(weatherError) : t('errors.generic')}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <button
@@ -82,7 +86,7 @@ export default function HomePage() {
           </div>
         </div>
       ) : (
-        <>
+        <div role="region" aria-label={t('home.title')}>
           <OutfitCard
             outfit={outfit}
             person={person}
@@ -103,7 +107,7 @@ export default function HomePage() {
               <PersonPicker />
             </div>
           </div>
-        </>
+        </div>
       )}
     </section>
   )

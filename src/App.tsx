@@ -4,8 +4,10 @@ import AboutPage from '@/pages/AboutPage'
 import HomePage from '@/pages/HomePage'
 import SearchPage from '@/pages/SearchPage'
 import SettingsPage from '@/pages/SettingsPage'
+import { useLocalizeDocument } from '@/hooks/useLocalizeDocument'
 
 export default function App() {
+  useLocalizeDocument()
   return (
     <Routes>
       <Route element={<AppLayout />}>

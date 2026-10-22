@@ -4,6 +4,9 @@
     "tagline": "Mira qué ponerte hoy — con imágenes, no con números.",
     "attribution": "Datos meteorológicos de Open-Meteo.com"
   },
+  "meta": {
+    "description": "Mom Recommends — mira qué ponerte hoy, con imágenes en lugar de números del tiempo."
+  },
   "nav": {
     "home": "Inicio",
     "search": "Buscar",

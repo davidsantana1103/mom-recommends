@@ -4,6 +4,9 @@
     "tagline": "See what to wear today — with images, not numbers.",
     "attribution": "Weather data by Open-Meteo.com"
   },
+  "meta": {
+    "description": "Mom Recommends — see what to wear today, with images instead of weather numbers."
+  },
   "nav": {
     "home": "Home",
     "search": "Search",
