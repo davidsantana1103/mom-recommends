@@ -1,8 +1,9 @@
 # Mom Recommends — Recommendation Rules
 
 > **Status**: Draft (v0.1)  
-> **Last updated**: 2025-10-22  
+> **Last updated**: 2026-10-22  
 > **Audience**: Developers, product managers, testers
+> **Related**: `docs/decisions.md` (D04–D06, D21), `docs/data-models.md` (types & bands)
 
 ---
 
@@ -31,16 +32,21 @@ Rules are composable — temperature sets the base layer stack, then activity an
 
 ## 2. Temperature Bands
 
-| Band | Temp Range (°C) | Description | Base Layers |
-|------|-----------------|-------------|-------------|
-| **FROZEN** | −30 to −11 | Very cold, risk of frostbite | thermal base + heavy coat + hat + gloves + insulated boots + scarf + face covering |
-| **COLD** | −10 to 0 | Cold, wind chill possible | thermal base + insulated jacket + hat + gloves + waterproof boots |
-| **CHILLY** | 0 to 10 | Cool, damp conditions | long sleeves + light jacket + scarf + closed shoes |
-| **COOL** | 10 to 15 | Mildly cool | sweater + long pants + closed shoes |
-| **MILD** | 15 to 20 | Pleasant, spring/fall | t-shirt + light jacket + jeans + sneakers |
-| **WARM** | 20 to 25 | Warm, summer-like | t-shirt + shorts/light pants + sandals/sneakers |
-| **HOT** | 25 to 35 | Hot, sunny | light clothing + hat + sunscreen |
-| **VERY_HOT** | 35+ | Very hot, heat stress | minimal clothing + wide-brim hat + high SPF sunscreen + hydration reminder |
+Bands are **half-open intervals `[lower, upper)`** (D05): an exact boundary value belongs to
+the **warmer** band. E.g. `0°C → CHILLY`, `10°C → COOL`, `25°C → HOT`, `35°C → VERY_HOT`.
+Below −30°C is still FROZEN (with an "extreme cold" warning). Derivation is defined in
+`docs/data-models.md` §4.2.
+
+| Band | Temp Range (°C) | Condition word (D06) | Description | Base layers (§4) |
+|------|-----------------|----------------------|-------------|------------------|
+| **FROZEN** | `< −10` (clamp −30) | freezing | Very cold, risk of frostbite | §4.1 |
+| **COLD** | `[−10, 0)` | cold | Cold, wind chill possible | §4.2 |
+| **CHILLY** | `[0, 10)` | cool | Cool, damp conditions | §4.3 |
+| **COOL** | `[10, 15)` | mildly cool | Mildly cool | §4.4 |
+| **MILD** | `[15, 20)` | mild | Pleasant, spring/fall | §4.5 |
+| **WARM** | `[20, 25)` | warm | Warm, summer-like | §4.6 |
+| **HOT** | `[25, 35)` | hot | Hot, sunny | §4.7 |
+| **VERY_HOT** | `≥ 35` | very hot | Very hot, heat stress | §4.8 |
 
 ---
 
@@ -50,25 +56,27 @@ Rules are composable — temperature sets the base layer stack, then activity an
 interface RuleContext {
   tempBand: TempBand;
   precipType: PrecipType;
-  uvMeaning: UVMeaning;
-  windSpeed: number;        // m/s
-  temperature: number;      // °C
-  snowDepth: number;        // cm
-  visibility: number;       // km
-  airQualityIndex: number;  // AQI
+  uvMeaning: UVMeaning;         // label from getUVMeaning(), §4.4 of data-models
+  uvIndex: number;              // numeric — used directly by warnings
+  windSpeed: number;            // m/s
+  temperature: number;          // °C
+  snowDepth: number;            // cm
+  visibility: number;           // km
+  airQualityIndex: number | null; // US AQI or null (D09)
 }
 
 function recommendOutfit(request: OutfitRequest): Outfit {
   const { weather, activity, person } = request;
 
-  // 1. Determine base temperature band
+  // 1. Determine base temperature band (half-open, D05)
   const tempBand = getTempBand(weather.current.temperature);
 
   // 2. Build context from all weather variables
-  const ctx = {
+  const ctx: RuleContext = {
     tempBand,
     precipType: weather.current.precipitationType,
     uvMeaning: getUVMeaning(weather.current.uvIndex),
+    uvIndex: weather.current.uvIndex,
     windSpeed: weather.current.windSpeed,
     temperature: weather.current.temperature,
     snowDepth: weather.current.snowDepth,
@@ -91,16 +99,16 @@ function recommendOutfit(request: OutfitRequest): Outfit {
   // 7. Apply person modifier (adult vs child)
   items = applyPersonModifier(items, person);
 
-  // 8. Deduplicate and sort by layer order
+  // 8. Deduplicate and sort by layer order (§13)
   items = dedupeAndSort(items);
 
-  // 9. Generate rationale string
+  // 9. Generate rationale (worded conditions only — no numbers, D04)
   const rationale = generateRationale(ctx, items, activity);
 
-  // 10. Calculate confidence score
+  // 10. Calculate confidence score (§10, D21)
   const confidence = calculateConfidence(ctx);
 
-  // 11. Generate warnings array
+  // 11. Generate warnings array (§11)
   const warnings = generateWarnings(ctx);
 
   return { items, rationale, confidence, warnings };
@@ -111,7 +119,7 @@ function recommendOutfit(request: OutfitRequest): Outfit {
 
 ## 4. Base Layers per Temperature Band
 
-### 4.1 FROZEN (−30°C to −11°C)
+### 4.1 FROZEN (below −10°C; lower clamp −30°C)
 ```
 Category | Item                  | Required | Notes
 ---------|-----------------------|----------|------------------------------------------
@@ -128,7 +136,7 @@ legs     | thermal leggings      | Yes      | under snow pants
 head     | face covering         | Optional | balaclava or neck gaiter
 ```
 
-### 4.2 COLD (−10°C to 0°C)
+### 4.2 COLD (−10°C ≤ t < 0°C)
 ```
 Category | Item                  | Required | Notes
 ---------|-----------------------|----------|------------------------------------------
@@ -144,7 +152,7 @@ legs     | thermal leggings      | Optional | under pants if below −5°C
 head     | scarf                 | Optional | neck protection
 ```
 
-### 4.3 CHILLY (0°C to 10°C)
+### 4.3 CHILLY (0°C ≤ t < 10°C)
 ```
 Category | Item                  | Required | Notes
 ---------|-----------------------|----------|------------------------------------------
@@ -157,7 +165,7 @@ hands    | light gloves          | Optional | if windy or below 5°C
 head     | hood                  | Optional | jacket hood up if raining
 ```
 
-### 4.4 COOL (10°C to 15°C)
+### 4.4 COOL (10°C ≤ t < 15°C)
 ```
 Category | Item                  | Required | Notes
 ---------|-----------------------|----------|------------------------------------------
@@ -169,7 +177,7 @@ head     | hat                   | Optional | cap or light beanie
 head     | hood                  | Optional | jacket hood if needed
 ```
 
-### 4.5 MILD (15°C to 20°C)
+### 4.5 MILD (15°C ≤ t < 20°C)
 ```
 Category | Item                  | Required | Notes
 ---------|-----------------------|----------|------------------------------------------
@@ -180,7 +188,7 @@ outer    | light jacket          | Optional | cardigan or windbreaker
 head     | hat                   | Optional | cap
 ```
 
-### 4.6 WARM (20°C to 25°C)
+### 4.6 WARM (20°C ≤ t < 25°C)
 ```
 Category | Item                  | Required | Notes
 ---------|-----------------------|----------|------------------------------------------
@@ -191,7 +199,7 @@ outer    | light cardigan        | Optional | for air conditioning
 head     | hat                   | Optional | sun hat or cap
 ```
 
-### 4.7 HOT (25°C to 35°C)
+### 4.7 HOT (25°C ≤ t < 35°C)
 ```
 Category | Item                  | Required | Notes
 ---------|-----------------------|----------|------------------------------------------
@@ -202,7 +210,7 @@ head     | sun hat               | Yes      | wide-brim preferred
 hands    | sunglasses            | Optional | UV protection
 ```
 
-### 4.8 VERY_HOT (35°C+)
+### 4.8 VERY_HOT (t ≥ 35°C)
 ```
 Category | Item                  | Required | Notes
 ---------|-----------------------|----------|------------------------------------------
@@ -223,9 +231,10 @@ legs     | breathable fabric     | Yes      | linen or cotton
 |------------------|----------|-------|
 | Any | waterproof outer layer | replace light jacket with raincoat |
 | Any | waterproof footwear | boots instead of sneakers |
-| CHILLY and below | umbrella | optional |
 | COLD and below | waterproof pants | instead of regular pants |
 | COOL and below | hood | jacket hood up |
+
+> Umbrella is **not produced in the MVP** — it is a post-MVP accessory (see §14).
 
 ### 5.2 SNOW
 | Temperature Band | Addition | Notes |
@@ -257,12 +266,13 @@ legs     | breathable fabric     | Yes      | linen or cotton
 | UV Index | Action | Item |
 |----------|--------|------|
 | 0–2 | None | — |
-| 3–5 | Sunscreen recommended | warning text only |
-| 6–7 | Hat recommended | baseball cap or sun hat |
+| 3–5 | Sunscreen recommended | warning text only (§11) |
+| 6–7 | Hat recommended + sunscreen | cap or sun hat + warning |
 | 8–10 | Hat required + sunglasses | sun hat + UV sunglasses |
-| 11+ | Wide-brim hat + sunglasses + sunscreen warning | wide-brim hat + UV sunglasses |
+| 11+ | Wide-brim hat required + sunglasses | wide-brim hat + UV sunglasses |
 
-**UV modifier behavior**: adds head/hands items only — does not change temperature-based layers.
+**UV modifier behavior**: adds head/hands items only — it never changes temperature-based
+layers. The corresponding warnings are generated in §11.
 
 ---
 
@@ -295,7 +305,7 @@ legs     | breathable fabric     | Yes      | linen or cotton
 ### 7.5 Commute
 - Layering for transitions: base + mid + outer (remove outer indoors)
 - Compact: items pack into bag
-- If rain/snow: add waterproof outer + compact umbrella
+- If rain/snow: add waterproof outer (compact umbrella is post-MVP)
 - Shoe requirement: closed-toe shoes
 
 ### 7.6 General (default)
@@ -330,11 +340,7 @@ Weather: −12°C, snowing, wind 15 km/h, UV 2 (low)
 Activity: school
 Person: child
 
-1. Temp band: COLD (−10°C to 0°C? No, −12°C → FROZEN band)
-   Actually −12°C is below −10°C → COLD band (−10 to 0)
-   Wait: −12°C < −10°C → actually COLD band (−10 to 0) doesn't include −12
-   Correction: −12°C is in FROZEN band (−30 to −11)? No, −12 > −30 but −12 < −10
-   Actually −12°C is between −30 and −11? −12 < −11 so yes → FROZEN band
+1. Temp band: −12 < −10 → FROZEN (half-open bands, §2)
 
 2. Base layers (FROZEN + child):
    - thermal underwear, thermal shirt, fleece, heavy winter coat,
@@ -344,25 +350,27 @@ Person: child
 3. Precipitation modifier (snow):
    - snow pants already in base
    - insulated boots already in base
-   - waterproof gloves → upgrade mittens to waterproof mittens
+   - upgrade mittens → waterproof mittens
 
 4. Wind modifier (15 km/h ≈ 4.2 m/s):
-   - Not above 8 m/s threshold → no change
+   - below the 8 m/s threshold → no change
 
 5. Activity modifier (school):
-   - Conservative coverage: long sleeves, long pants → already satisfied
-   - Closed-toe shoes → boots satisfy this
+   - conservative coverage already satisfied
+   - closed-toe shoes already satisfied by boots
 
-6. UV modifier (UV 2): None
+6. UV modifier (UV 2): none
 
 7. Final outfit:
    - thermal underwear, thermal shirt, fleece, heavy winter coat,
    - snow pants, insulated winter boots, knit hat, waterproof mittens,
    - glove liners, thermal leggings
 
-Rationale: "It's −12°C and snowing, so we recommend a full winter outfit for school. Warm layers to stay dry and protected."
-Confidence: 0.95
-Warnings: []
+Confidence: 1.0 − 0.05 (FROZEN) = 0.95
+Warnings: ["Extreme cold — limit outdoor exposure"]   (UV 2 is low)
+
+Rationale: "It's freezing and snowing, so we recommend a full winter outfit for school.
+Warm layers to keep dry and protected."   (worded conditions only — no numbers, D04)
 ```
 
 ### Example B: Warm Sunny Day — Adult Playground
@@ -371,29 +379,31 @@ Weather: 28°C, sunny, wind 5 km/h, UV 8 (very high)
 Activity: playground
 Person: adult
 
-1. Temp band: WARM (20°C to 25°C)? 28°C → HOT (25°C to 35°C)
+1. Temp band: 28 is in [25, 35) → HOT
 
 2. Base layers (HOT + adult):
    - t-shirt, shorts, sandals
 
-3. Precipitation modifier: None
+3. Precipitation modifier: none (dry)
 
-4. Wind modifier: 5 km/h ≈ 1.4 m/s → None
+4. Wind modifier (5 km/h ≈ 1.4 m/s): none
 
 5. Activity modifier (playground):
-   - Closed-toe shoes → replace sandals with sneakers
-   - Long pants? No (temp ≥ 25°C): shorts allowed
+   - closed-toe shoes → replace sandals with sneakers
+   - shorts allowed (temp ≥ 25°C)
 
-6. UV modifier (UV 8):
-   - Hat required → sun hat
-   - Sunglasses recommended → UV sunglasses
+6. UV modifier (UV 8, in 8–10):
+   - hat required → sun hat
+   - sunglasses → UV sunglasses
 
 7. Final outfit:
    - t-shirt, shorts, sneakers, sun hat, UV sunglasses
 
-Rationale: "It's 28°C and sunny with very high UV, so wear light, breathable clothing. A cap and sunglasses will help with sun protection."
-Confidence: 0.90
-Warnings: ["High UV index — apply sunscreen", "Wear a hat for extra sun protection"]
+Confidence: 1.0 − 0.05 (HOT) − 0.05 (UV ≥ 8) = 0.90
+Warnings: ["Very high UV — apply sunscreen, wear a wide-brim hat and sunglasses"]
+
+Rationale: "It's hot and sunny with very high UV, so wear light, breathable clothing. A hat
+and sunglasses will help with sun protection."   (worded conditions only — no numbers, D04)
 ```
 
 ### Example C: Rainy Cool Day — Adult Commute
@@ -402,7 +412,7 @@ Weather: 8°C, raining, wind 10 km/h, UV 4 (moderate)
 Activity: commute
 Person: adult
 
-1. Temp band: CHILLY (0°C to 10°C)
+1. Temp band: 8 is in [0, 10) → CHILLY
 
 2. Base layers (CHILLY + adult):
    - long-sleeve shirt, light jacket, long pants, closed shoes
@@ -410,22 +420,23 @@ Person: adult
 3. Precipitation modifier (rain):
    - waterproof outer layer → replace light jacket with raincoat
    - waterproof footwear → replace closed shoes with boots
-   - umbrella → add to accessories (future v2)
+   - (umbrella is post-MVP — not produced)
 
-4. Wind modifier (10 km/h ≈ 2.8 m/s): None
+4. Wind modifier (10 km/h ≈ 2.8 m/s): none
 
 5. Activity modifier (commute):
-   - Layering system: base + mid + outer → satisfied
-   - Compact: raincoat folds into bag → no change
+   - layering satisfied; raincoat is compact → no change
 
-6. UV modifier (UV 4): Sunscreen recommended → warning text
+6. UV modifier (UV 4, in 3–5): sunscreen warning only
 
 7. Final outfit:
    - long-sleeve shirt, raincoat, long pants, boots
 
-Rationale: "It's 8°C and raining, so wear a raincoat over your layers with waterproof boots."
-Confidence: 0.92
-Warnings: ["Moderate UV index — sunscreen recommended"]
+Confidence: 1.0 − 0.05 (rain) = 0.95
+Warnings: ["Moderate UV — sunscreen recommended"]
+
+Rationale: "It's cool and raining, so wear a raincoat over your layers with waterproof
+boots."   (worded conditions only — no numbers, D04)
 ```
 
 ---
@@ -436,44 +447,57 @@ Warnings: ["Moderate UV index — sunscreen recommended"]
 function calculateConfidence(ctx: RuleContext): number {
   let confidence = 1.0;
 
-  // Reduce confidence for extreme conditions
+  // Extreme temperature bands need human judgment
   if (ctx.tempBand === 'FROZEN' || ctx.tempBand === 'VERY_HOT') {
-    confidence -= 0.05; // extreme temps need human judgment
-  }
-
-  // Reduce confidence for mixed precipitation
-  if (ctx.precipType === 'sleet' || ctx.precipType === 'hail') {
-    confidence -= 0.10; // ambiguous precipitation
-  }
-
-  // Reduce confidence for high wind
-  if (ctx.windSpeed > 10) {
-    confidence -= 0.05; // wind chill factor varies
-  }
-
-  // Reduce confidence for poor visibility
-  if (ctx.visibility < 5) {
     confidence -= 0.05;
   }
+
+  // Rain can be patchy; sleet/hail is genuinely ambiguous
+  if (ctx.precipType === 'rain') confidence -= 0.05;
+  if (ctx.precipType === 'sleet' || ctx.precipType === 'hail') confidence -= 0.10;
+
+  // High wind makes the "feels like" temperature vary
+  if (ctx.windSpeed > 10) confidence -= 0.05;
+
+  // Poor visibility
+  if (ctx.visibility < 5) confidence -= 0.05;
+
+  // UV ≥ 8 days depend on personal sunscreen discipline
+  if (ctx.uvIndex >= 8) confidence -= 0.05;
 
   return Math.max(0.1, Math.min(1.0, confidence));
 }
 ```
 
+The worked examples in §9 match this function exactly (D21):
+
+| Example | Deductions | Result |
+|---------|------------|--------|
+| A (−12°C FROZEN) | −0.05 (FROZEN) | 0.95 |
+| B (28°C HOT, UV 8) | −0.05 (HOT) −0.05 (UV ≥ 8) | 0.90 |
+| C (8°C rain) | −0.05 (rain) | 0.95 |
+
 ---
 
 ## 11. Warnings Generation
+
+Warnings use **numeric thresholds** on `ctx.uvIndex` (never on the `uvMeaning` label), so the
+warning set is an exact match for §6:
 
 ```typescript
 function generateWarnings(ctx: RuleContext): string[] {
   const warnings: string[] = [];
 
-  // UV warnings
-  if (ctx.uvMeaning >= UV_MEANING.HIGH) {
-    warnings.push('High UV index — apply sunscreen');
-  }
-  if (ctx.uvMeaning >= UV_MEANING.VERY_HIGH) {
-    warnings.push('Very high UV — wear a wide-brim hat');
+  // UV warnings — one message per severity band, mirrors the §6 table
+  // (input is ctx.uvIndex, a number, never the uvMeaning label)
+  if (ctx.uvIndex >= 11) {
+    warnings.push('Extreme UV — minimize outdoor exposure, apply SPF 50+ sunscreen');
+  } else if (ctx.uvIndex >= 8) {
+    warnings.push('Very high UV — apply sunscreen, wear a wide-brim hat and sunglasses');
+  } else if (ctx.uvIndex >= 6) {
+    warnings.push('High UV — apply sunscreen and wear a hat');
+  } else if (ctx.uvIndex >= 3) {
+    warnings.push('Moderate UV — sunscreen recommended');
   }
 
   // Temperature warnings
@@ -484,8 +508,8 @@ function generateWarnings(ctx: RuleContext): string[] {
     warnings.push('Heat warning — stay hydrated');
   }
 
-  // Air quality warnings
-  if (ctx.airQualityIndex > 150) {
+  // Air quality (only when the provider supplies it — D09)
+  if (ctx.airQualityIndex !== null && ctx.airQualityIndex > 150) {
     warnings.push('Poor air quality — consider indoor activities');
   }
 
@@ -498,20 +522,34 @@ function generateWarnings(ctx: RuleContext): string[] {
 }
 ```
 
+Warning strings are **not hard-coded** in the UI: every string is an i18next key (D17); the
+pseudo-code above shows the English defaults.
+
 ---
 
 ## 12. Rationale Generation
 
-The rationale is a human-readable sentence explaining why this outfit was chosen:
+The rationale is a human-readable sentence explaining why this outfit was chosen. It is
+**localized** (i18next) and uses **worded conditions only — never weather numbers** (D04/D06).
 
 ```
-Template: "It's {temperature}°C and {condition}, {activity-specific note}, so we recommend {item summary} for {person}."
+Template:
+"It's {condition_word} and {weather_phrase}, so we recommend {outfit_summary} for {activity}."
+
+Fill-ins:
+- condition_word: from the temp band (D06): freezing / cold / cool / mildly cool / mild / warm / hot / very hot
+- weather_phrase: snowing, raining, sleeting, windy, foggy, sunny, cloudy, overcast, dry
+- outfit_summary: 2–4 headline items ("a full winter outfit", "a raincoat over layers")
+- activity: school / playground / walk / sport / commute
 
 Examples:
-- "It's −12°C and snowing, so we recommend a full winter outfit for school. Warm layers to stay dry and protected."
-- "It's 28°C and sunny with very high UV, so wear light, breathable clothing. A cap and sunglasses will help with sun protection."
-- "It's 8°C and raining, so wear a raincoat over your layers with waterproof boots."
+- "It's freezing and snowing, so we recommend a full winter outfit for school. Warm layers to keep dry and protected."
+- "It's hot and sunny with very high UV, so wear light, breathable clothing. A hat and sunglasses will help with sun protection."
+- "It's cool and raining, so wear a raincoat over your layers with waterproof boots."
 ```
+
+`weather_phrase` is derived from `weatherCode` → `precipitationType` (data-models §4.1) plus
+cloud cover; it never includes a numeric value, a degree symbol, or a wind figure.
 
 ---
 
@@ -527,30 +565,39 @@ Rules must be applied in this order:
 6. **Person** → adjust for child/adult
 
 ### 13.2 Deduplication
-If both temperature and precipitation suggest footwear, use the more protective one (e.g., insulated boots over sneakers).
+If both temperature and precipitation suggest the same category (e.g., footwear), use the
+more protective one (insulated boots over sneakers, waterproof over non-waterproof).
 
 ### 13.3 Layer Conflicts
-- Only one item per category per layer (e.g., can't have two "base layer" items for feet)
-- If conflict arises, keep the item with higher `required` flag
+- Only one item per **category per layer** (e.g., can't have two "base layer" items for feet).
+- If a conflict arises, keep the item with `required: true` over `required: false`; if both
+  have the same `required` flag, keep the later-applied (more weather-specific) one.
+- "One item per category" applies to **rendered** items; e.g., thermal leggings may be listed
+  under `legs` alongside snow pants because they occupy different layers (2 vs 3).
 
 ### 13.4 Extensibility
 New rules can be added by:
 1. Adding a new modifier function (e.g., `applyAirQualityModifier`)
 2. Calling it in `recommendOutfit` between steps 5–7
 3. Documenting the rule in this document
+4. Recording any product choice it introduces in `docs/decisions.md`
 
 ---
 
 ## 14. Future Considerations
 
+Statuses reflect decisions D13–D16.
+
 | Idea | Status | Notes |
 |------|--------|-------|
-| Multi-day outfit carousel | Planned | Use `daily` forecast for 7-day preview |
-| Accessories (scarf, umbrella) | Planned | v2 feature — optional items |
-| Customization | Not planned | MVP keeps generated avatar fixed |
+| Multi-day outfit carousel | Post-MVP (D13) | Use `daily` forecast once extended to 7 days |
+| Accessories (scarf, umbrella, sunglasses) | Post-MVP | Optional items; `required: false` already supported |
+| Customization | Not planned (D11/D12) | Avatar stays deterministic; gender deferred |
 | Season modifier | Future | "Spring wardrobe" vs "Winter wardrobe" presets |
 | Weighted rules | Future | Allow power users to prioritize warmth vs. breathability |
 
 ---
 
-This document defines the complete rule-based recommendation engine for Mom Recommends. All logic is frontend-side, testable, and provider-independent.
+This document defines the complete rule-based recommendation engine for Mom Recommends.
+All logic is frontend-side, deterministic, testable, and provider-independent; every open
+question it previously raised is resolved in `docs/decisions.md`.

@@ -1,8 +1,9 @@
 # Mom Recommends — Data Models
 
 > **Status**: Draft (v0.1)  
-> **Last updated**: 2025-10-22  
+> **Last updated**: 2026-10-22  
 > **Audience**: Developers, testers, documentation readers
+> **Related**: `docs/decisions.md` (binding decisions D01–D24)
 
 ---
 
@@ -42,7 +43,7 @@ export type ItemCategory =
   | 'head'    // hat, hood, helmet
   | 'hands'   // gloves, mittens
   | 'legs'    // pants, leggings, tights
-  | 'accessory' // scarf, umbrella, sunglasses (v2)
+  | 'accessory' // scarf, umbrella, sunglasses (post-MVP)
 ;
 ```
 
@@ -59,7 +60,10 @@ interface OutfitItem {
 ```
 
 ### 1.5 WeatherData (Normalized)
-All providers output this standardized format:
+
+All providers output this standardized format. **Canonical units are fixed (D19)** — °C,
+m/s, mm, km (visibility), cm (snow depth), % — and the provider is responsible for
+converting from whatever its source returns. The engine and UI never convert units.
 
 ```typescript
 interface WeatherData {
@@ -67,18 +71,18 @@ interface WeatherData {
     lat: number;
     lon: number;
     name: string;               // human-readable location name
-    timezone: string;           // IANA timezone, e.g. "America/New_York"
+    timezone: string;           // IANA timezone, e.g. "America/New_York" (from provider)
   };
   current: WeatherSnapshot;
   hourly: WeatherSnapshot[];    // next 24–48 hours
-  daily: DailySummary;          // today's min/max, sunrise/sunset
+  daily: DailySummary[];        // index 0 = today; index 1 = tomorrow (fetched per D13)
   fetchedAt: number;            // epoch ms when fetched
   provider: string;             // e.g. "open-meteo"
 }
 
 interface WeatherSnapshot {
-  time: number;                 // epoch ms (hour start)
-  temperature: number;          // °C (Celsius preferred)
+  time: number;                 // epoch ms (UTC; render in location timezone)
+  temperature: number;          // °C
   apparentTemperature: number;  // "feels like" °C
   windSpeed: number;            // m/s
   windDirection: number;        // degrees (0 = North)
@@ -87,11 +91,10 @@ interface WeatherSnapshot {
   snowDepth: number;            // cm on ground (0 if none)
   humidity: number;             // 0–100%
   uvIndex: number;              // 0–11+ (UV Index)
-  airQualityIndex: number;      // 0–500 (US AQI) or provider-specific
+  airQualityIndex: number | null; // US AQI 0–500; null if provider has no AQI (D09)
   cloudCover: number;           // 0–100%
   visibility: number;           // km
-  weatherCode: number;          // WMO code (normalized)
-  fetchedAt: number;            // epoch ms
+  weatherCode: number;          // WMO code (Open-Meteo passes through; others map to WMO)
 }
 ```
 
@@ -101,10 +104,11 @@ interface DailySummary {
   date: string;                 // YYYY-MM-DD in location timezone
   tempMin: number;              // °C
   tempMax: number;              // °C
-  sunrise: number;              // epoch ms (local time)
-  sunset: number;               // epoch ms (local time)
+  sunrise: number;              // epoch ms (UTC)
+  sunset: number;               // epoch ms (UTC)
   precipitationSum: number;     // mm total for day
   precipitationType: 'none' | 'rain' | 'snow' | 'mixed';
+  // derived from the daily WMO weather_code (dominant) — 'mixed' when daytime codes span rain + snow
   uvIndexMax: number;           // max UV during day
 }
 ```
@@ -121,7 +125,7 @@ interface OutfitRequest {
   weather: WeatherData;
   activity: Activity;
   person: Person;
-  gender?: 'neutral' | 'masculine' | 'feminine'; // for avatar styling only
+  gender?: 'neutral' | 'masculine' | 'feminine'; // avatar styling only; MVP renders 'neutral' (D12)
 }
 ```
 
@@ -142,13 +146,16 @@ interface Outfit {
 interface OutfitItem {
   category: ItemCategory;
   name: string;                 // "insulated winter boots"
-  description: string;          // "waterproof, rated to -20°C"
+  description: string;          // "waterproof, rated to −20°C"
   layer: number;                // 1 = base, 2 = mid, 3 = outer
-  required: boolean;            // true = essential, false = optional
-  avatarAsset: string;          // e.g. "/assets/avatar/boots.svg"
-  imageUrl?: string;            // optional photo for display (future)
+  required: boolean;            // true = essential, false = optional (post-MVP accessories)
+  avatarAsset: string;          // e.g. "/public/assets/avatar/clothing/feet/boots.svg"
 }
 ```
+
+> `description` is developer/QA-facing; the end-user UI never shows raw item text or
+> weather numbers (D04). All user-facing strings are i18next keys (see §7).
+> A photo variant (`imageUrl`) is **not modeled** in the MVP — avatars are SVG only.
 
 ---
 
@@ -175,82 +182,113 @@ interface WeatherProvider {
 
 ### 3.1 Provider Examples
 
-#### OpenMeteoProvider (Free, No Key)
-- **URL**: `https://api.open-meteo.com/v1/forecast`
+#### OpenMeteoProvider (MVP default — free, no key, D08)
+- **Forecast URL**: `https://api.open-meteo.com/v1/forecast`
+- **Air quality URL**: `https://air-quality-api.open-meteo.com/v1/air-quality` (separate request, `current=us_aqi`, D09)
 - **Parameters**:
   - `latitude`, `longitude`: required
-  - `current`: temperature, wind, etc.
-  - `hourly`: detailed hourly forecast
-  - `daily`: daily summary
-  - `timezone`: auto-detect
-  - `forecast_days`: 2 (today + tomorrow)
-- **Free tier**: 10,000 requests/day, no API key needed
+  - `current` / `hourly` / `daily`: variable groups (see `docs/architecture.md` §5)
+  - `timezone`: `auto` (returns the IANA timezone for the coordinates)
+  - `forecast_days`: `2` (today + tomorrow; MVP shows only today, D13)
+  - `temperature_unit=celsius`, `wind_speed_unit=ms`, `precipitation_unit=mm` (must be set — defaults are not the canonical units, D19)
+  - `timeformat=unixtime` (epoch **seconds**; provider converts to ms)
+- **Free tier**: 10,000 calls/day for **non-commercial** use, no API key (limits per Open-Meteo terms)
+- **Attribution**: required under CC BY 4.0 — "Weather data by Open-Meteo.com"
+- **Normalization**: visibility m→km (`÷ 1000`), snow_depth m→cm (`× 100`), timestamps s→ms (`× 1000`), AQI `us_aqi` (or `null` on failure)
 
-#### AccuWeatherProvider (Future)
+#### AccuWeatherProvider (Future, keyed)
 - **URL**: `https://dataservice.accuweather.com/forecasts/v1/hourly/12hour/{cityId}`
-- **Requires**: API key, city ID
-- **Features**: Minute-by-minute, severe weather alerts
+- **Requires**: API key, location key (city search first)
+- **Features**: minute-by-minute forecasts, severe weather alerts
+- **Status**: post-MVP (D20)
 
-#### OpenWeatherMapProvider (Future)
+#### OpenWeatherMapProvider (Future, keyed)
 - **URL**: `https://api.openweathermap.org/data/2.5/onecall`
 - **Requires**: API key
-- **Features**: Current + hourly + daily, global coverage
+- **Features**: current + hourly + daily, global coverage
+- **Status**: post-MVP (D20)
 
 ---
 
 ## 4. Weather Code Normalization
 
-We map provider-specific weather codes to a **unified set** for consistent logic:
+`WeatherSnapshot.weatherCode` always holds a **WMO weather code**. Open-Meteo already
+returns WMO codes, so it passes through unchanged; any other provider must map its raw codes
+into the WMO table below. The grouping below is the canonical reference used by the whole
+system (see the WMO appendix, §10).
 
-| Provider | Raw Code | Normalized Meaning |
-|----------|----------|---------------------|
-| Open-Meteo | 0 | clear sky |
-| Open-Meteo | 1 | mainly clear |
-| Open-Meteo | 2 | partly cloudy |
-| Open-Meteo | 3 | overcast |
-| Open-Meteo | 45 | fog |
-| Open-Meteo | 48 | depositing rime fog |
-| Open-Meteo | 51 | light drizzle |
-| Open-Meteo | 61 | light rain |
-| Open-Meteo | 80 | rain showers |
-| Open-Meteo | 95 | thunderstorm |
-| Open-Meteo | 85 | snow fall |
-| Open-Meteo | 86 | snow grains |
-| Open-Meteo | 88 | ice pellets |
-| Open-Meteo | 98 | thunderstorm with snow |
+### 4.1 precipitationType Derivation
 
-### 4.1 Temperature Bands (for clothing rules)
 ```typescript
-export const TEMP_BANDS = {
-  FROZEN: { min: -30, max: -11 },        // -30°C to -11°C
-  COLD: { min: -10, max: 0 },            // -10°C to 0°C
-  CHILLY: { min: 0, max: 10 },           // 0°C to 10°C
-  COOL: { min: 10, max: 15 },            // 10°C to 15°C
-  MILD: { min: 15, max: 20 },            // 15°C to 20°C
-  WARM: { min: 20, max: 25 },            // 20°C to 25°C
-  HOT: { min: 25, max: 35 },             // 25°C to 35°C
-  VERY_HOT: { min: 35, max: 45 },        // 35°C to 45°C+
+export type PrecipType = 'none' | 'rain' | 'snow' | 'sleet' | 'hail';
+```
+
+`precipitationType` is **derived from `weatherCode`** (not from precipitation amounts), so
+all providers agree on semantics. A provider may refine with observed amounts, but the code
+grouping is the source of truth.
+
+```typescript
+function derivePrecipitationType(code: number): PrecipType {
+  if ([0, 1, 2, 3, 45, 48].includes(code)) return 'none';        // clear/cloudy/fog
+  if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95].includes(code)) return 'rain'; // drizzle, rain, showers, thunderstorm
+  if ([56, 57, 66, 67, 83, 84].includes(code)) return 'sleet';   // freezing drizzle/rain, mixed showers
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return 'snow';    // snow fall, snow grains, snow showers
+  if ([96, 99].includes(code)) return 'hail';                    // thunderstorm with hail
+  return 'none';                                                 // unknown codes treated as dry
+}
+```
+
+### 4.2 Temperature Bands (for clothing rules)
+
+Bands are **half-open intervals `[min, max)`** (D05): an exact boundary value belongs to the
+**warmer** band. Temperatures below −30°C are still FROZEN (with an "extreme cold" warning).
+
+```typescript
+export type TempBand =
+  | 'FROZEN' | 'COLD' | 'CHILLY' | 'COOL' | 'MILD' | 'WARM' | 'HOT' | 'VERY_HOT';
+
+export function getTempBand(t: number): TempBand {
+  if (t < -10) return 'FROZEN';     // lower clamp at -30 (still FROZEN below)
+  if (t < 0)   return 'COLD';       // [-10, 0)
+  if (t < 10)  return 'CHILLY';     // [0, 10)
+  if (t < 15)  return 'COOL';       // [10, 15)
+  if (t < 20)  return 'MILD';       // [15, 20)
+  if (t < 25)  return 'WARM';       // [20, 25)
+  if (t < 35)  return 'HOT';        // [25, 35)
+  return 'VERY_HOT';                // [35, ∞)
+}
+```
+
+Boundary examples: `−10 → COLD`, `0 → CHILLY`, `10 → COOL`, `15 → MILD`, `20 → WARM`,
+`25 → HOT`, `35 → VERY_HOT`.
+
+### 4.3 Condition Words (for the rationale)
+
+The rationale never prints numbers (D04); it uses a fixed word per band (D06):
+
+```typescript
+export const CONDITION_WORDS: Record<TempBand, string> = {
+  FROZEN: 'freezing', COLD: 'cold', CHILLY: 'cool', COOL: 'mildly cool',
+  MILD: 'mild', WARM: 'warm', HOT: 'hot', VERY_HOT: 'very hot',
 };
 ```
 
-### 4.2 Precipitation Type Mapping
-- `'none'` → no precipitation
-- `'rain'` → liquid rain
-- `'snow'` → solid precipitation
-- `'sleet'` → mixed rain/snow
-- `'hail'` → ice pellets
-- `'mixed'` → precipitationSum > 0 but type ambiguous
+### 4.4 UV Index Levels
 
-### 4.3 UV Index Interpretation
 ```typescript
-export const UV_MEANING = {
-  LOW: 0,  // 0-2: minimal risk
-  MODERATE: 3,  // 3-5: moderate risk
-  HIGH: 6,    // 6-7: high risk
-  VERY_HIGH: 8, // 8-10: very high risk
-  EXTREME: 11+  // 11+: extreme risk
-};
+export type UVMeaning = 'low' | 'moderate' | 'high' | 'very_high' | 'extreme';
+
+export function getUVMeaning(uv: number): UVMeaning {
+  if (uv <= 2) return 'low';
+  if (uv <= 5) return 'moderate';
+  if (uv <= 7) return 'high';
+  if (uv <= 10) return 'very_high';
+  return 'extreme';
+}
 ```
+
+> `getUVMeaning` returns a **label**, never a number — warnings use the numeric `uvIndex`
+> thresholds directly (see `docs/recommendation-rules.md` §11).
 
 ---
 
@@ -259,55 +297,37 @@ export const UV_MEANING = {
 ```typescript
 function recommendOutfit(request: OutfitRequest): Outfit {
   const { weather, activity, person } = request;
-  
-  // 1. Get temperature band
+
+  // 1. Get temperature band (half-open intervals, D05)
   const tempBand = getTempBand(weather.current.temperature);
-  
-  // 2. Get precipitation type
+
+  // 2. Get precipitation type (derived from WMO weatherCode, §4.1)
   const precipType = weather.current.precipitationType;
-  
-  // 3. Get UV level
+
+  // 3. Get UV level (label, not a number, §4.4)
   const uvMeaning = getUVMeaning(weather.current.uvIndex);
-  
-  // 4. Activity modifiers
-  const activityModifiers = getActivityModifiers(activity);
-  
-  // 5. Person modifiers
-  const personModifiers = getPersonModifiers(person);
-  
-  // 6. Apply rules (see docs/recommendation-rules.md)
-  const items = applyClothingRules({
-    tempBand,
-    precipType,
-    uvMeaning,
-    activityModifiers,
-    personModifiers,
-    weather: weather
-  });
-  
-  // 7. Generate rationale
-  const rationale = generateRationale({
-    tempBand,
-    precipType,
-    uvMeaning,
-    activityModifiers,
-    personModifiers,
-    weather: weather
-  });
-  
-  // 8. Confidence (simple heuristic)
-  const confidence = calculateConfidence({ tempBand, precipType, uvMeaning, activityModifiers });
-  
-  // 9. Warnings
-  const warnings = generateWarnings({
-    uvMeaning,
-    precipType,
-    tempBand
-  });
-  
+
+  // 4–5. Build the rule context (wind, snow depth, AQI, etc.)
+  const ctx = buildRuleContext(weather, tempBand, precipType, uvMeaning);
+
+  // 6. Apply rules in fixed order — see docs/recommendation-rules.md §13.1
+  const items = recommendOutfitItems(ctx, activity, person);
+
+  // 7. Rationale: localized, worded conditions only, no numbers (D04/D06)
+  const rationale = generateRationale(ctx, items, activity);
+
+  // 8. Confidence: deterministic deductions (§10 of recommendation-rules.md, D21)
+  const confidence = calculateConfidence(ctx);
+
+  // 9. Warnings: numeric uvIndex thresholds, not uvMeaning labels (recommendation-rules §11)
+  const warnings = generateWarnings(ctx);
+
   return { items, rationale, confidence, warnings };
 }
 ```
+
+> The authoritative rule steps are in `docs/recommendation-rules.md`. This file defines the
+> types and normalizations only.
 
 ---
 
@@ -319,31 +339,33 @@ function recommendOutfit(request: OutfitRequest): Outfit {
 - **Naming**: `category_name.svg` (e.g., `feet_insulated_winter_boots.svg`)
 - **Bundle**: All assets in `/public/assets/avatar/`
 
-### 6.2 Weather Asset CDN
-- All weather data is fetched from public APIs
-- No local caching of weather images (real-time only)
-- Optional: cache provider metadata (provider name, attribution)
+### 6.2 Weather & Provider Data
+- The app has **no weather images** — everything visual is an SVG from §6.1
+- All weather data is fetched from the configured provider and cached per D23
+  (`sessionStorage`, 5-minute TTL)
+- Provider metadata (display name, attribution text) is bundled in the registry — no runtime
+  fetch or cache needed for it
 
 ---
 
 ## 7. Localization (i18n) Strategy
 
 ### 7.1 Language Keys
-- All UI strings use `i18next` keys in format: `recommendation.rationale.temp_cold`
+- All UI strings use `i18next` keys in format: `recommendation.rationale.temp_frozen`
 - Example keys:
   - `location.search` → "Search for location"
-  - `recommendation.rationale` → "It's {temp}°C and {condition}, so we recommend..."
-  - `warnings.high_uv` → "High UV index — apply sunscreen"
+  - `recommendation.rationale` → "It's {condition} and {weather_phrase}, so we recommend {outfit_summary} for {activity}."
+  - `warnings.high_uv` → "High UV — apply sunscreen"
   - `activity.school` → "School"
+- Rationale takes **condition words, not temperatures** (D04/D06, §4.3) — never interpolate a
+  number into a user-facing string
 
-### 7.2 Language Support (Phase 1)
-- English (default)
-- Spanish (es)
-- French (fr)
-- German (de)
+### 7.2 Language Support
+- **Phase 1 (MVP):** English (default) + Spanish (es) — D17
+- **Roadmap:** French (fr), German (de) — D17
 
 ### 7.3 Fallback
-- If translation missing, show English with warning icon
+- If a translation is missing, show the English string with a warning icon (dev-only)
 
 ---
 
@@ -381,118 +403,116 @@ function recommendOutfit(request: OutfitRequest): Outfit {
 
 ## 10. Appendix: WMO Weather Code Reference
 
-| Code | Meaning | Notes |
-|------|---------|-------|
-| 0 | clear sky | day/night distinction in Open-Meteo |
-| 1 | mostly clear | few clouds |
-| 2 | partly cloudy | scattered clouds |
-| 3 | overcast | cloudy all day |
-| 45 | fog | visibility < 1km |
-| 48 | depositing rime fog | fog with freezing droplets |
-| 51 | light drizzle | very light rain |
-| 53 | moderate drizzle | medium intensity |
-| 55 | heavy drizzle | strong drizzle |
-| 56 | light freezing drizzle | drizzle with freezing rain |
-| 57 | heavy freezing drizzle | intense freezing drizzle |
-| 61 | light rain | 0.1–2.9 mm/h |
-| 63 | moderate rain | 2.9–6.1 mm/h |
-| 65 | heavy rain | >6.1 mm/h |
-| 66 | light freezing rain | rain with freezing droplets |
-| 67 | heavy freezing rain | intense freezing rain |
-| 68 | light snow | 0.1–2.9 mm/h |
-| 69 | moderate snow | 2.9–6.1 mm/h |
-| 70 | heavy snow | >6.1 mm/h |
-| 71 | light snow shower | brief, light snow |
-| 69 | moderate snow shower | brief, medium snow |
-| 77 | snow grains | small ice particles |
-| 75 | squall | sudden gusty wind with rain/snow |
-| 76 | squall with snow grains | |
-| 78 | squall with rain | |
-| 95 | thunderstorm | rain + lightning |
-| 96 | thunderstorm with slight hail | |
-| 99 | thunderstorm with heavy hail | |
+Canonical grouping used by Open-Meteo and by this app's normalization (§4). This is the
+**complete** code set the app must handle.
 
-*Source: WMO Weather Codes (international standard)*
+| Code(s) | Meaning | §4.1 → precipitationType |
+|---------|---------|--------------------------|
+| 0 | Clear sky | none |
+| 1 | Mainly clear | none |
+| 2 | Partly cloudy | none |
+| 3 | Overcast | none |
+| 45 | Fog | none |
+| 48 | Depositing rime fog | none |
+| 51, 53, 55 | Drizzle: light, moderate, dense | rain |
+| 56, 57 | Freezing drizzle: light, dense | sleet |
+| 61, 63, 65 | Rain: slight, moderate, heavy | rain |
+| 66, 67 | Freezing rain: light, heavy | sleet |
+| 71, 73, 75 | Snow fall: slight, moderate, heavy | snow |
+| 77 | Snow grains | snow |
+| 80, 81, 82 | Rain showers: slight, moderate, violent | rain |
+| 83, 84 | Rain and snow showers, mixed | sleet |
+| 85, 86 | Snow showers: slight, heavy | snow |
+| 95 | Thunderstorm (slight or moderate, no hail) | rain |
+| 96, 99 | Thunderstorm with slight / heavy hail | hail |
+
+*Source: WMO weather interpretation codes as implemented by Open-Meteo. Codes 83/84 are in
+the table for future providers; Open-Meteo itself does not emit them.*
 
 ---
 
 ## 11. Appendix: Temperature Band Definitions
 
-| Band | Range (°C) | Description | Clothing Notes |
-|------|------------|-------------|----------------|
-| FROZEN | -30 to -11 | Very cold, risk of frostbite | Heavy winter coat, insulated boots, hat, gloves, face covering |
-| COLD | -10 to 0 | Cold, wind chill possible | Insulated jacket, thermal layers, waterproof boots, gloves, hat |
-| CHILLY | 0 to 10 | Cool, damp conditions common | Light jacket, long sleeves, scarf, waterproof shoes |
-| COOL | 10 to 15 | Mildly cool, comfortable for most | Sweater or light jacket, long pants, closed shoes |
-| MILD | 15 to 20 | Pleasant, spring/fall weather | T-shirt + light jacket, jeans, sneakers |
-| WARM | 20 to 25 | Warm, summer-like | T-shirt, shorts/light pants, sandals/sneakers |
-| HOT | 25 to 35 | Hot, sunny | Light clothing, hat, sunscreen |
-| VERY_HOT | 35+ | Very hot, potential heat stress | Minimal clothing, wide-brim hat, high SPF sunscreen, hydration reminder |
+Half-open intervals `[lower, upper)` (D05) — a boundary value belongs to the warmer band.
+
+| Band | Range (°C) | Condition word (D06) | Description | Clothing Notes |
+|------|------------|----------------------|-------------|----------------|
+| FROZEN | `< −10` (clamp −30) | freezing | Very cold, risk of frostbite | Heavy winter coat, insulated boots, hat, gloves, face covering |
+| COLD | `[−10, 0)` | cold | Cold, wind chill possible | Insulated jacket, thermal layers, waterproof boots, gloves, hat |
+| CHILLY | `[0, 10)` | cool | Cool, damp conditions common | Light jacket, long sleeves, scarf, waterproof shoes |
+| COOL | `[10, 15)` | mildly cool | Mildly cool, comfortable for most | Sweater or light jacket, long pants, closed shoes |
+| MILD | `[15, 20)` | mild | Pleasant, spring/fall weather | T-shirt + light jacket, jeans, sneakers |
+| WARM | `[20, 25)` | warm | Warm, summer-like | T-shirt, shorts/light pants, sandals/sneakers |
+| HOT | `[25, 35)` | hot | Hot, sunny | Light clothing, hat, sunscreen |
+| VERY_HOT | `≥ 35` | very hot | Very hot, potential heat stress | Minimal clothing, wide-brim hat, high SPF sunscreen, hydration reminder |
 
 ---
 
 ## 12. Appendix: Activity-Specific Rules (Examples)
 
-### 2.1 School Activity
+> Full activity rules live in `docs/recommendation-rules.md` §7; this is a summary.
+
+### 12.1 School Activity
 - Conservative: wear full coverage (long sleeves, pants)
 - If cold: add thermal base layer
 - If warm: short sleeves OK, but keep light jacket for classroom AC
 
-### 2.1 Playground Activity
+### 12.2 Playground Activity
 - Minimal layers: breathable fabrics
 - If cold: warm jacket but allow removal
 - If rain: waterproof outer layer, quick-dry base
 
-### 2.1 Sport Activity
+### 12.3 Sport Activity
 - Technical fabrics: moisture-wicking, stretchy
 - If cold: thermal base layer under athletic wear
 - If rain: windbreaker with ventilation
 
-### 2.1 Commute Activity
+### 12.4 Commute Activity
 - Prepare for transitions: layering system
-- If rain/snow: waterproof outer layer + compact umbrella
+- If rain/snow: waterproof outer layer + compact umbrella (post-MVP accessory)
 - If cold: insulated coat with hood, warm accessories
 
 ---
 
 ## 13. Appendix: Sample Outfit Generation (Cold Day)
 
-**Weather**: -12°C, snowing, wind 15 km/h, UV 2 (low)  
+**Weather**: −12°C, snowing, wind 15 km/h, UV 2 (low) → band **FROZEN**, precip **snow**  
 **Activity**: school  
 **Person**: child  
 
 **Outfit**:
 1. **base** → thermal underwear (layer 1) - required
-2. **mid** → long-sleeve thermal shirt (layer 2) - required
-3. **outer** → insulated winter jacket (layer 3) - required
-4. **legs** → snow pants (layer 2) - required
+2. **mid** → thermal shirt + fleece/wool layer (layer 2) - required
+3. **outer** → heavy winter coat (layer 3) - required
+4. **legs** → snow pants + thermal leggings (layer 2) - required
 5. **feet** → insulated winter boots (layer 3) - required
 6. **head** → knit hat (layer 1) - required
-7. **hands** → winter gloves (layer 2) - required
+7. **hands** → insulated mittens + glove liners (layer 2) - required
 
-**Rationale**: "It's -12°C and snowing, so we recommend a full winter outfit for school. Warm layers to stay dry and protected."
+**Rationale**: "It's freezing and snowing, so we recommend a full winter outfit for school.
+Warm layers to keep dry and protected." *(worded conditions only — no numbers, D04)*
 
-**Warnings**: [] (UV is low)
+**Warnings**: ["Extreme cold — limit outdoor exposure"] (FROZEN band warning; UV 2 is low)
 
 ---
 
 ## 14. Appendix: Sample Outfit Generation (Warm Day)
 
-**Weather**: 28°C, sunny, UV 8 (very high), no precipitation  
+**Weather**: 28°C, sunny, wind 5 km/h, UV 8 (very high) → band **HOT**, precip **none**  
 **Activity**: playground  
 **Person**: adult  
 
 **Outfit**:
 1. **base** → t-shirt (layer 1) - required
-2. **mid** → light shorts (layer 1) - required
-3. **feet** → sneakers (layer 1) - required
-4. **head** → baseball cap (layer 1) - optional
-5. **hands** → sunglasses (layer 1) - optional
-6. **legs** → jeans or shorts - required
+2. **legs** → shorts (layer 1) - required
+3. **feet** → sneakers (layer 1) - required (playground requires closed-toe)
+4. **head** → sun hat (layer 1) - required (UV ≥ 8)
+5. **hands** → UV sunglasses (layer 1) - required (UV ≥ 8)
 
-**Rationale**: "It's 28°C and sunny with very high UV, so wear light, breathable clothing. A cap and sunglasses will help with sun protection."
+**Rationale**: "It's hot and sunny with very high UV, so wear light, breathable clothing. A hat
+and sunglasses will help with sun protection." *(worded conditions only — no numbers, D04)*
 
-**Warnings**: ["High UV index — apply sunscreen", "Wear a hat for extra sun protection"]
+**Warnings**: ["Very high UV — apply sunscreen, wear a wide-brim hat and sunglasses"]
 
 ---
 
@@ -534,35 +554,43 @@ function recommendOutfit(request: OutfitRequest): Outfit {
             └── sunglasses.svg
 ```
 
-**Naming convention**: `{category}_{item_name}.svg`  
-**Example**: `feet_insulated_winter_boots.svg`
+**Naming convention**: within each category folder, files are `{item-slug}.svg`
+(e.g., `clothing/feet/boots.svg`). Full asset path = `/public/assets/avatar/{...}`.
 
 ---
 
 ## 16. Appendix: Build & Deployment Checklist
 
-- [ ] SPA built with Vite + React + TypeScript
-- [ ] All assets optimized (SVG compression, image WebP)
-- [ ] Service worker configured for offline support
-- [ ] i18n ready with JSON locale files
+- [ ] SPA built with Vite + React + TypeScript (D02)
+- [ ] All SVG assets optimized (only SVG — no photos, D11)
+- [ ] Service worker configured for offline assets (MVP; installable PWA post-MVP, D16)
+- [ ] i18n ready with JSON locale files — Phase 1 EN + ES (D17)
 - [ ] Responsive design tested on mobile devices
-- [ ] Privacy policy displayed on first load (no tracking)
-- [ ] No API keys hardcoded (user-configurable in Settings)
-- [ ] Open-Meteo as default provider (no key required)
-- [ ] Documentation updated in `/docs/`
+- [ ] Privacy line + provider/OSM attributions shown in the footer (D08/D10)
+- [ ] No API keys in the MVP; future keyed providers keep keys in `localStorage` only (D20)
+- [ ] Open-Meteo as default provider (non-commercial, no key, D08)
+- [ ] Documentation updated in `/docs/` (decisions in `docs/decisions.md`)
 
 ---
 
-## 17. Open Questions
+## 17. Resolved Decisions
 
-| Topic | Status | Notes |
-|-------|--------|-------|
-| Avatar illustration style | Decided | Flat SVG layers (simple, scalable) |
-| Asset sourcing | To-do | Need to create or license SVG set |
-| Multi-language support | Planned | Start with EN + ES |
-| Performance optimization | In-progress | Lazy-load avatar assets |
-| Testing framework | Planned | Vitest + React Testing Library |
+Every item that used to be listed as an open question is now decided (D01–D24). Summary:
+
+| Topic | Decision | ID |
+|-------|----------|-----|
+| Avatar illustration style | Flat, minimal, layered SVG — in-house | D11 |
+| Asset sourcing | Draw in-house; bundled in-repo under MIT | D11 |
+| Multi-language support | Phase 1 EN + ES; FR, DE roadmap | D17 |
+| Performance optimization | In-MVP: avatar SVGs are lazy-loaded; single-purpose bundles | D02 |
+| Testing framework | Vitest + React Testing Library + Playwright | D03 |
+| Weather numbers in UI | Never shown; worded rationale only | D04 |
+| Temperature bands | Half-open `[lower, upper)`; boundaries warmer | D05 |
+| Air quality | Open-Meteo Air Quality API; nullable US AQI | D09 |
+| API keys | None in MVP; `localStorage` only later | D20 |
 
 ---
 
-This document defines the complete data model and architecture for the Mom Recommends SPA. All components are designed to be provider-agnostic, privacy-first, and easy to extend.
+This document defines the complete data model and normalization contract for the Mom
+Recommends SPA. All components are provider-agnostic, privacy-first, and use the canonical
+units and decisions recorded in `docs/decisions.md`.
