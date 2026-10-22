@@ -12,7 +12,7 @@ describe('App', () => {
     )
 
     expect(screen.getByRole('navigation')).toBeInTheDocument()
-    expect(screen.getByText('Mom Recommends', { selector: 'h1' })).toBeInTheDocument()
+    expect(screen.getByText("Today's outfit")).toBeInTheDocument()
     expect(screen.getByLabelText('Home')).toBeInTheDocument()
   })
 })

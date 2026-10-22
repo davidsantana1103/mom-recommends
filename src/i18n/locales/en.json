@@ -1,13 +1,74 @@
 {
   "app": {
     "name": "Mom Recommends",
-    "tagline": "See what to wear today — with images, not numbers."
+    "tagline": "See what to wear today — with images, not numbers.",
+    "attribution": "Weather data by Open-Meteo.com"
   },
   "nav": {
     "home": "Home",
     "search": "Search",
     "settings": "Settings",
     "about": "About"
+  },
+  "activities": {
+    "school": "School",
+    "playground": "Playground",
+    "walk": "Walk",
+    "sport": "Sport",
+    "commute": "Commute",
+    "general": "General"
+  },
+  "persons": {
+    "adult": "Adult",
+    "child": "Child"
+  },
+  "home": {
+    "title": "Today's outfit",
+    "loading": "Checking the weather…",
+    "for": "Outfit for {{activity}}",
+    "retry": "Try again",
+    "useMyLocation": "Use my location",
+    "searchInstead": "Search for a city instead",
+    "confidence": "Confidence",
+    "warnings": "Notes",
+    "items": "What's included"
+  },
+  "search": {
+    "title": "Find your place",
+    "placeholder": "City, neighborhood or postal code",
+    "button": "Search",
+    "useCurrentLocation": "Use my current location",
+    "noResults": "No places found. Try another name.",
+    "failed": "The search failed. Try again in a moment.",
+    "results": "Pick a place",
+    "privacyNote": "Your place never leaves your device — we only ask the weather service for it."
+  },
+  "settings": {
+    "title": "Settings",
+    "activity": "Default activity",
+    "person": "For whom",
+    "language": "Language",
+    "provider": "Weather provider",
+    "saved": "Changes are saved automatically on this device."
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español"
+  },
+  "about": {
+    "title": "About Mom Recommends",
+    "privacyTitle": "Privacy first",
+    "privacyText": "No account, no tracking, no backend. Your location, preferences and weather stay in this browser.",
+    "dataTitle": "Where does the data come from?",
+    "dataText": "Weather and air quality by Open-Meteo.com. Place names by OpenStreetMap (Nominatim).",
+    "contactTitle": "Questions about privacy?",
+    "contactText": "During development we answer through the project's GitHub Issues.",
+    "credits": "Made for parents and kids who would rather see the answer than read a number."
+  },
+  "errors": {
+    "location_unavailable": "We couldn't get your location. Search for a city instead.",
+    "weather_fetch": "We couldn't fetch the weather right now. Try again in a moment.",
+    "generic": "Something went wrong."
   },
   "conditions": {
     "freezing": "freezing",
@@ -73,5 +134,43 @@
     "heat": "Heat warning — stay hydrated",
     "poor_air": "Poor air quality — consider indoor activities",
     "heavy_snow": "Heavy snow — boots recommended"
+  },
+  "items": {
+    "thermal_underwear": "Thermal underwear",
+    "thermal_leggings": "Thermal leggings",
+    "glove_liners": "Glove liners",
+    "knit_hat": "Warm hat",
+    "face_covering": "Face covering",
+    "thermal_shirt": "Thermal shirt",
+    "fleece": "Fleece",
+    "heavy_winter_coat": "Heavy winter coat",
+    "snow_pants": "Snow pants",
+    "insulated_winter_boots": "Insulated winter boots",
+    "insulated_mittens": "Insulated mittens",
+    "waterproof_mittens": "Waterproof mittens",
+    "long_sleeve_shirt": "Long-sleeve shirt",
+    "sweater": "Sweater",
+    "insulated_jacket": "Insulated jacket",
+    "insulated_pants": "Insulated pants",
+    "insulated_boots": "Insulated boots",
+    "scarf": "Scarf",
+    "gloves": "Gloves",
+    "light_jacket": "Light jacket",
+    "long_pants": "Long pants",
+    "closed_shoes": "Closed-toe shoes",
+    "hat": "Cap",
+    "light_gloves": "Light gloves",
+    "tshirt": "T-shirt",
+    "hood": "Hood",
+    "shorts": "Shorts",
+    "sandals": "Sandals",
+    "light_cardigan": "Light cardigan",
+    "sun_hat": "Sun hat",
+    "wide_brim_hat": "Wide-brim hat",
+    "sunglasses": "Sunglasses",
+    "sneakers": "Sneakers",
+    "raincoat": "Raincoat",
+    "waterproof_boots": "Waterproof boots",
+    "windbreaker": "Windbreaker"
   }
 }

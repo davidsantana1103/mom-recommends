@@ -50,6 +50,7 @@ export default function AppLayout() {
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-1 px-4 py-4 text-xs text-ink-muted">
           <p>© {new Date().getFullYear()} {t('app.name')}</p>
           <p>{t('app.tagline')}</p>
+          <p>{t('app.attribution')}</p>
         </div>
       </footer>
     </div>
