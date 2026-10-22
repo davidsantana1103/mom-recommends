@@ -8,5 +8,70 @@
     "search": "Search",
     "settings": "Settings",
     "about": "About"
+  },
+  "conditions": {
+    "freezing": "freezing",
+    "cold": "cold",
+    "cool": "cool",
+    "mildly_cool": "mildly cool",
+    "mild": "mild",
+    "warm": "warm",
+    "hot": "hot",
+    "very_hot": "very hot"
+  },
+  "weather": {
+    "snowing": "snowing",
+    "raining": "raining",
+    "sleeting": "sleeting",
+    "hailing": "hailing",
+    "foggy": "foggy",
+    "windy": "windy",
+    "sunny": "sunny",
+    "partly_cloudy": "partly cloudy",
+    "cloudy": "cloudy"
+  },
+  "uv": {
+    "high": "high",
+    "very_high": "very high",
+    "extreme": "extreme"
+  },
+  "activity": {
+    "school": "school",
+    "playground": "the playground",
+    "walk": "a walk",
+    "sport": "sports",
+    "commute": "your commute",
+    "general": "the day"
+  },
+  "rationale": {
+    "first": "It's {{condition}} and {{weather}}, so {{recommendation}}.",
+    "first_uv": "It's {{condition}} and {{weather}} with {{uv}} UV, so {{recommendation}}.",
+    "rec": {
+      "full_winter": "we recommend a full winter outfit for {{activity}}",
+      "warm_layers": "we recommend warm layers for {{activity}}",
+      "layered": "we recommend layered clothing for {{activity}}",
+      "light_extra_layer": "we recommend a light extra layer for {{activity}}",
+      "light_layers": "we recommend light layers for {{activity}}",
+      "summer_outfit": "we recommend a light summer outfit for {{activity}}",
+      "light_breathable": "wear light, breathable clothing for {{activity}}",
+      "minimal": "wear minimal, breathable clothing for {{activity}}",
+      "raincoat_layers": "wear a raincoat over your layers with waterproof boots for {{activity}}",
+      "warm_waterproof": "we recommend a warm waterproof outfit for {{activity}}"
+    },
+    "suffix": {
+      "frozen": "Warm layers to keep dry and protected.",
+      "very_hot": "Stay cool and well hydrated.",
+      "sun": "A hat and sunglasses will help with sun protection."
+    }
+  },
+  "warnings": {
+    "uv_extreme": "Extreme UV — minimize outdoor exposure, apply SPF 50+ sunscreen",
+    "uv_very_high": "Very high UV — apply sunscreen, wear a wide-brim hat and sunglasses",
+    "uv_high": "High UV — apply sunscreen and wear a hat",
+    "uv_moderate": "Moderate UV — sunscreen recommended",
+    "extreme_cold": "Extreme cold — limit outdoor exposure",
+    "heat": "Heat warning — stay hydrated",
+    "poor_air": "Poor air quality — consider indoor activities",
+    "heavy_snow": "Heavy snow — boots recommended"
   }
 }
