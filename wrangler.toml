@@ -1,0 +1,5 @@
+# Cloudflare Pages project config (D16/D22 are shipped in the build; this only
+# configures the Pages upload). Custom domain: mom.synclab.live
+name = "mom-recommends"
+compatibility_date = "2026-10-22"
+pages_build_output_dir = "dist"
