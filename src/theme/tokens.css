@@ -1,0 +1,44 @@
+/*
+ * Design tokens (D02) — CSS custom properties are the single source of truth.
+ * Tailwind maps them into utilities via `@theme inline` in `src/index.css`,
+ * so overriding a token here (e.g. high-contrast mode) re-skins the whole app.
+ */
+:root {
+  /* Brand palette — warm orange, friendly and accessible */
+  --token-brand-50: #fff7ed;
+  --token-brand-100: #ffedd5;
+  --token-brand-200: #fed7aa;
+  --token-brand-300: #fdba74;
+  --token-brand-400: #fb923c;
+  --token-brand-500: #f97316;
+  --token-brand-600: #ea580c;
+  --token-brand-700: #c2410c;
+  --token-brand-800: #9a3412;
+  --token-brand-900: #7c2d12;
+
+  /* Neutral palette — warm gray */
+  --token-stone-50: #fafaf9;
+  --token-stone-100: #f5f5f4;
+  --token-stone-200: #e7e5e4;
+  --token-stone-300: #d6d3d1;
+  --token-stone-400: #a8a29e;
+  --token-stone-500: #78716c;
+  --token-stone-600: #57534e;
+  --token-stone-700: #44403c;
+  --token-stone-800: #292524;
+  --token-stone-900: #1c1917;
+
+  /* Semantic tokens */
+  --token-bg: var(--token-stone-50);
+  --token-surface: #ffffff;
+  --token-surface-alt: var(--token-stone-100);
+  --token-text: var(--token-stone-900);
+  --token-text-muted: var(--token-stone-600);
+  --token-border: var(--token-stone-200);
+  --token-primary: var(--token-brand-600);
+  --token-primary-hover: var(--token-brand-700);
+  --token-focus-ring: var(--token-brand-500);
+  --token-success: #15803d;
+  --token-warning: #b45309;
+  --token-danger: #b91c1c;
+}

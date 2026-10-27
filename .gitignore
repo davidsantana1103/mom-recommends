@@ -23,3 +23,12 @@
 hs_err_pid*
 .idea
 target
+
+# Node / Vite
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.vite/

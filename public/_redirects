@@ -1,0 +1,3 @@
+# Cloudflare Pages SPA fallback: serve the app shell for any route so
+# BrowserRouter deep links (/search, /settings, /about) resolve at mom.synclab.live.
+/*    /index.html   200

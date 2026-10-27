@@ -1,0 +1,179 @@
+{
+  "app": {
+    "name": "Mom Recommends",
+    "tagline": "See what to wear today — with images, not numbers.",
+    "attribution": "Weather data by Open-Meteo.com"
+  },
+  "meta": {
+    "description": "Mom Recommends — see what to wear today, with images instead of weather numbers."
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "activities": {
+    "school": "School",
+    "playground": "Playground",
+    "walk": "Walk",
+    "sport": "Sport",
+    "commute": "Commute",
+    "general": "General"
+  },
+  "persons": {
+    "adult": "Adult",
+    "child": "Child"
+  },
+  "home": {
+    "title": "Today's outfit",
+    "loading": "Checking the weather…",
+    "for": "Outfit for {{activity}}",
+    "retry": "Try again",
+    "useMyLocation": "Use my location",
+    "searchInstead": "Search for a city instead",
+    "confidence": "Confidence",
+    "warnings": "Notes",
+    "items": "What's included"
+  },
+  "search": {
+    "title": "Find your place",
+    "placeholder": "City, neighborhood or postal code",
+    "button": "Search",
+    "useCurrentLocation": "Use my current location",
+    "noResults": "No places found. Try another name.",
+    "failed": "The search failed. Try again in a moment.",
+    "results": "Pick a place",
+    "privacyNote": "Your place never leaves your device — we only ask the weather service for it."
+  },
+  "settings": {
+    "title": "Settings",
+    "activity": "Default activity",
+    "person": "For whom",
+    "language": "Language",
+    "provider": "Weather provider",
+    "saved": "Changes are saved automatically on this device."
+  },
+  "languages": {
+    "en": "English",
+    "es": "Español"
+  },
+  "about": {
+    "title": "About Mom Recommends",
+    "privacyTitle": "Privacy first",
+    "privacyText": "No account, no tracking, no backend. Your location, preferences and weather stay in this browser.",
+    "dataTitle": "Where does the data come from?",
+    "dataText": "Weather and air quality by Open-Meteo.com. Place names by OpenStreetMap (Nominatim).",
+    "contactTitle": "Questions about privacy?",
+    "contactText": "During development we answer through the project's GitHub Issues.",
+    "credits": "Made for parents and kids who would rather see the answer than read a number."
+  },
+  "errors": {
+    "location_unavailable": "We couldn't get your location. Search for a city instead.",
+    "weather_fetch": "We couldn't fetch the weather right now. Try again in a moment.",
+    "generic": "Something went wrong."
+  },
+  "conditions": {
+    "freezing": "freezing",
+    "cold": "cold",
+    "cool": "cool",
+    "mildly_cool": "mildly cool",
+    "mild": "mild",
+    "warm": "warm",
+    "hot": "hot",
+    "very_hot": "very hot"
+  },
+  "weather": {
+    "snowing": "snowing",
+    "raining": "raining",
+    "sleeting": "sleeting",
+    "hailing": "hailing",
+    "foggy": "foggy",
+    "windy": "windy",
+    "sunny": "sunny",
+    "partly_cloudy": "partly cloudy",
+    "cloudy": "cloudy"
+  },
+  "uv": {
+    "high": "high",
+    "very_high": "very high",
+    "extreme": "extreme"
+  },
+  "activity": {
+    "school": "school",
+    "playground": "the playground",
+    "walk": "a walk",
+    "sport": "sports",
+    "commute": "your commute",
+    "general": "the day"
+  },
+  "rationale": {
+    "first": "It's {{condition}} and {{weather}}, so {{recommendation}}.",
+    "first_uv": "It's {{condition}} and {{weather}} with {{uv}} UV, so {{recommendation}}.",
+    "rec": {
+      "full_winter": "we recommend a full winter outfit for {{activity}}",
+      "warm_layers": "we recommend warm layers for {{activity}}",
+      "layered": "we recommend layered clothing for {{activity}}",
+      "light_extra_layer": "we recommend a light extra layer for {{activity}}",
+      "light_layers": "we recommend light layers for {{activity}}",
+      "summer_outfit": "we recommend a light summer outfit for {{activity}}",
+      "light_breathable": "wear light, breathable clothing for {{activity}}",
+      "minimal": "wear minimal, breathable clothing for {{activity}}",
+      "raincoat_layers": "wear a raincoat over your layers with waterproof boots for {{activity}}",
+      "warm_waterproof": "we recommend a warm waterproof outfit for {{activity}}"
+    },
+    "suffix": {
+      "frozen": "Warm layers to keep dry and protected.",
+      "very_hot": "Stay cool and well hydrated.",
+      "sun": "A hat and sunglasses will help with sun protection."
+    }
+  },
+  "warnings": {
+    "uv_extreme": "Extreme UV — minimize outdoor exposure, apply SPF 50+ sunscreen",
+    "uv_very_high": "Very high UV — apply sunscreen, wear a wide-brim hat and sunglasses",
+    "uv_high": "High UV — apply sunscreen and wear a hat",
+    "uv_moderate": "Moderate UV — sunscreen recommended",
+    "extreme_cold": "Extreme cold — limit outdoor exposure",
+    "heat": "Heat warning — stay hydrated",
+    "poor_air": "Poor air quality — consider indoor activities",
+    "heavy_snow": "Heavy snow — boots recommended"
+  },
+  "items": {
+    "thermal_underwear": "Thermal underwear",
+    "thermal_leggings": "Thermal leggings",
+    "glove_liners": "Glove liners",
+    "knit_hat": "Warm hat",
+    "face_covering": "Face covering",
+    "thermal_shirt": "Thermal shirt",
+    "fleece": "Fleece",
+    "heavy_winter_coat": "Heavy winter coat",
+    "snow_pants": "Snow pants",
+    "insulated_winter_boots": "Insulated winter boots",
+    "insulated_mittens": "Insulated mittens",
+    "waterproof_mittens": "Waterproof mittens",
+    "long_sleeve_shirt": "Long-sleeve shirt",
+    "sweater": "Sweater",
+    "insulated_jacket": "Insulated jacket",
+    "insulated_pants": "Insulated pants",
+    "insulated_boots": "Insulated boots",
+    "scarf": "Scarf",
+    "gloves": "Gloves",
+    "light_jacket": "Light jacket",
+    "long_pants": "Long pants",
+    "closed_shoes": "Closed-toe shoes",
+    "hat": "Cap",
+    "light_gloves": "Light gloves",
+    "tshirt": "T-shirt",
+    "hood": "Hood",
+    "shorts": "Shorts",
+    "sandals": "Sandals",
+    "light_cardigan": "Light cardigan",
+    "sun_hat": "Sun hat",
+    "wide_brim_hat": "Wide-brim hat",
+    "sunglasses": "Sunglasses",
+    "sneakers": "Sneakers",
+    "raincoat": "Raincoat",
+    "waterproof_boots": "Waterproof boots",
+    "windbreaker": "Windbreaker"
+  }
+}
