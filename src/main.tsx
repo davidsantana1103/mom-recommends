@@ -5,9 +5,13 @@ import App from '@/App'
 import '@/i18n'
 import '@/index.css'
 
+// The router must know the deploy base (`/` locally, `/mom-recommends/` on a
+// GitHub Pages project site) or no route matches and the app renders blank.
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <App />
     </BrowserRouter>
   </StrictMode>,
