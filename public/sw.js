@@ -4,13 +4,19 @@
  * static files even without a connection. */
 'use strict'
 
-const VERSION = 'mom-recommends-v1'
+const VERSION = 'mom-recommends-v2'
+
+// App root derived from the service worker's own URL, so the cache works both
+// at the domain root (Cloudflare Pages) and under a subpath (GitHub Pages
+// project site at /<repo>/). `./` resolves to the directory the SW is served
+// from, which is the Vite `base` used to build it.
+const APP_ROOT = new URL('./', self.location).pathname
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(VERSION)
-      .then((cache) => cache.addAll(['/']))
+      .then((cache) => cache.addAll([APP_ROOT]))
       .then(() => self.skipWaiting()),
   )
 })
@@ -36,10 +42,10 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           const copy = response.clone()
-          void caches.open(VERSION).then((cache) => cache.put('/', copy))
+          void caches.open(VERSION).then((cache) => cache.put(APP_ROOT, copy))
           return response
         })
-        .catch(() => caches.match('/')),
+        .catch(() => caches.match(APP_ROOT)),
     )
     return
   }

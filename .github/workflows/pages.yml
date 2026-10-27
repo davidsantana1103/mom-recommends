@@ -1,0 +1,62 @@
+name: Deploy demo to GitHub Pages
+
+# Publishes a clickable live demo of the app using GitHub's built-in Pages
+# hosting, so a branch or PR can be viewed in a browser without any extra
+# hosting setup. Only `main` is served (that is where the repository's Pages
+# environment points). To preview another branch before merging, run this
+# workflow from the Actions tab with that branch selected (workflow_dispatch).
+#
+# This is independent of the Cloudflare Pages production deploy (deploy.yml)
+# and does not change it.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deploy at a time; cancel superseded runs.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      # A project site is served from https://<owner>.github.io/<repo>/, so the
+      # build needs that base path or its hashed /assets/* and /sw.js 404.
+      - name: Build
+        env:
+          BASE_PATH: ${{ github.event.repository.name }}
+        run: npm run build
+      # GitHub Pages has no SPA rewrite rule; serving index.html as the 404
+      # page lets BrowserRouter deep links (/search, /settings) resolve.
+      - name: Add SPA fallback
+        run: cp dist/index.html dist/404.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
