@@ -36,7 +36,20 @@ function injectCsp(): Plugin {
   }
 }
 
+/**
+ * Public base path for the built app. Cloudflare Pages serves at the root
+ * (`/`), while a GitHub Pages project site lives under `/<repo>/`. CI sets
+ * BASE_PATH for the Pages demo build; the default keeps the Cloudflare deploy
+ * and local dev at the root.
+ */
+function resolveBase(): string {
+  const raw = process.env.BASE_PATH?.trim()
+  if (!raw || raw === '/') return '/'
+  return `/${raw.replace(/^\/+|\/+$/g, '')}/`
+}
+
 export default defineConfig({
+  base: resolveBase(),
   plugins: [injectCsp(), react(), tailwindcss()],
   resolve: {
     alias: {
